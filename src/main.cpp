@@ -1431,7 +1431,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 		else if (pindexLast->nHeight+1 >= 0)
 			DiffMode = 2;
 	} else {
-		if( pindexLast->nHeight+1 >= 225000 )
+		if( pindexLast->nHeight+1 >= 227500 )
 			DiffMode = 4;
 		else if (pindexLast->nHeight+1 >= 200000)
 			DiffMode = 3;
@@ -1445,10 +1445,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 		return GetNextWorkRequired_V2(pindexLast, pblock);
 	else if (DiffMode == 3)
 		return DarkGravityWave2(pindexLast, pblock);
-//	else if (DiffMode == 4)
-//		return DarkGravityWave3(pindexLast, pblock);
-	return DarkGravityWave2(pindexLast, pblock);
-	
+	else if (DiffMode == 4)
+		return DarkGravityWave3(pindexLast, pblock);
+	return DarkGravityWave3(pindexLast, pblock);
 }
 
 double ConvertBitsToDouble(unsigned int nBits){
