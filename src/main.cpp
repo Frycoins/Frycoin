@@ -998,13 +998,13 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock) {
 int64 static GetBlockValue(int nHeight, int64 nFees) {
 	int64 nSubsidy = 300 * COIN;
 
-	if( nHeight < 250000 ) {
-		// Subsidy disabled
+//	if( nHeight < 250000 ) {
+//		// Subsidy disabled
 		nSubsidy >>= (nHeight / 9999999999);
-	} else {
-		// Half every 150k blocks after Block#250000
-		nSubsidy >>= ((nHeight - 250000 + 150000) / 150000);
-	}
+//	} else {
+//		// Half every 150k blocks after Block#250000
+//		nSubsidy >>= ((nHeight - 250000 + 150000) / 150000);
+//	}
 
 	return nSubsidy + nFees;
 }
@@ -1431,7 +1431,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 		else if (pindexLast->nHeight+1 >= 0)
 			DiffMode = 2;
 	} else {
-		if (pindexLast->nHeight+1 >= 200000)
+		if( pindexLast->nHeight+1 >= 225000 )
+			DiffMode = 4;
+		else if (pindexLast->nHeight+1 >= 200000)
 			DiffMode = 3;
 		else if (pindexLast->nHeight+1 >= 0)
 			DiffMode = 2;
@@ -1442,8 +1444,11 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 	else if (DiffMode == 2)
 		return GetNextWorkRequired_V2(pindexLast, pblock);
 	else if (DiffMode == 3)
-		return DarkGravityWave3(pindexLast, pblock);
-	return DarkGravityWave3(pindexLast, pblock);
+		return DarkGravityWave2(pindexLast, pblock);
+//	else if (DiffMode == 4)
+//		return DarkGravityWave3(pindexLast, pblock);
+	return DarkGravityWave2(pindexLast, pblock);
+	
 }
 
 
@@ -2396,9 +2401,32 @@ bool CBlock::AcceptBlock(CValidationState &state, CDiskBlockPos *dbp) {
 		pindexPrev = (*mi).second;
 		nHeight = pindexPrev->nHeight+1;
 
+//Following is from DarkCoin, Check their github - evan@darkcoin.io
+#ifdef _WIN32
+		// Check proof of work Taken from 
+		if(nHeight >= 200000){
+			unsigned int nBitsNext = GetNextWorkRequired(pindexPrev, this);
+			double n1 = ConvertBitsToDouble(nBits);
+			double n2 = ConvertBitsToDouble(nBitsNext);
+			if (abs(n1-n2) > n1*0.2) 
+				return state.DoS(100, error("AcceptBlock() : incorrect proof of work (DGW pre-fork)"));
+		} else {
+			if (nBits != GetNextWorkRequired(pindexPrev, this))
+				return state.DoS(100, error("AcceptBlock() : incorrect proof of work"));
+		}
+#else
 		// Check proof of work
-		if (nBits != GetNextWorkRequired(pindexPrev, this))
-			return state.DoS(100, error("AcceptBlock() : incorrect proof of work"));
+		if(nHeight >= 200000){
+			unsigned int nBitsNext = GetNextWorkRequired(pindexPrev, this);
+			double n1 = ConvertBitsToDouble(nBits);
+			double n2 = ConvertBitsToDouble(nBitsNext);
+			if (abs(n1-n2) > n1*0.2)
+				return state.DoS(100, error("AcceptBlock() : incorrect proof of work (DGW pre-fork)"));
+		} else {
+			if (nBits != GetNextWorkRequired(pindexPrev, this))
+				return state.DoS(100, error("AcceptBlock() : incorrect proof of work"));
+		}
+#endif
 
 		// Check timestamp against prev
 		if (GetBlockTime() <= pindexPrev->GetMedianTimePast())
