@@ -997,15 +997,16 @@ uint256 static GetOrphanRoot(const CBlockHeader* pblock) {
 
 int64 static GetBlockValue(int nHeight, int64 nFees) {
 	int64 nSubsidy = 300 * COIN;
-
-//	if( nHeight < 250000 ) {
-//		// Subsidy disabled
-		nSubsidy >>= (nHeight / 9999999999);
-//	} else {
-//		// Half every 150k blocks after Block#250000
-//		nSubsidy >>= ((nHeight - 250000 + 150000) / 150000);
-//	}
-
+/*	int64 nSubsidy = 50 * COIN;
+	if( fTestNet && nHeight < 10 ) {
+		nSubsidy = 300 * COIN;
+		if( nHeight >= 5 )
+			nSubsidy >>= ((nHeight - 5 + 2) / 2);
+	} else if( !fTestNet && nHeight < 700000 ) {
+		nSubsidy = 300 * COIN;
+		if( nHeight >= 250000 )
+				nSubsidy >>= ((nHeight - 250000 + 150000) / 150000);
+	} */
 	return nSubsidy + nFees;
 }
 
@@ -1426,12 +1427,10 @@ unsigned int static GetNextWorkRequired_V2(const CBlockIndex* pindexLast, const 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock) {
 	int DiffMode = 1;
 	if (fTestNet) {
-		if (pindexLast->nHeight+1 >= 2)
-			DiffMode = 3;
-		else if (pindexLast->nHeight+1 >= 0)
-			DiffMode = 2;
+		if( pindexLast->nHeight+1 >= 2 )
+			DiffMode = 1;
 	} else {
-		if( pindexLast->nHeight+1 >= 225000 )
+		if( pindexLast->nHeight+1 >= 250000 )
 			DiffMode = 4;
 		else if (pindexLast->nHeight+1 >= 200000)
 			DiffMode = 3;
@@ -1445,10 +1444,9 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 		return GetNextWorkRequired_V2(pindexLast, pblock);
 	else if (DiffMode == 3)
 		return DarkGravityWave2(pindexLast, pblock);
-//	else if (DiffMode == 4)
-//		return DarkGravityWave3(pindexLast, pblock);
-	return DarkGravityWave2(pindexLast, pblock);
-	
+	else if (DiffMode == 4)
+		return DarkGravityWave3(pindexLast, pblock);
+	return DarkGravityWave3(pindexLast, pblock);
 }
 
 double ConvertBitsToDouble(unsigned int nBits){
@@ -2961,13 +2959,13 @@ void UnloadBlockIndex() {
 }
 
 bool LoadBlockIndex() {
-	if (fTestNet) {
-		pchMessageStart[0] = 0xfc;
-		pchMessageStart[1] = 0xc1;
-		pchMessageStart[2] = 0xb7;
-		pchMessageStart[3] = 0xdc;
-		hashGenesisBlock = uint256("0x0b7fa4e7e37e9312798ff683abd17d5dde83e2da5214d0a708f65395e8357814");
-	}
+//	if (fTestNet) {
+//		pchMessageStart[0] = 0xfc;
+//		pchMessageStart[1] = 0xc1;
+//		pchMessageStart[2] = 0xb7;
+//		pchMessageStart[3] = 0xdc;
+//		hashGenesisBlock = uint256("0x0b7fa4e7e37e9312798ff683abd17d5dde83e2da5214d0a708f65395e8357814");
+//	}
 
 	//
 	// Load block index from databases
@@ -3015,10 +3013,10 @@ bool InitBlockIndex() {
 		block.nBits = 0x1e0ffff0;
 		block.nNonce = 2086003279;
 
-		if (fTestNet) {
-			block.nTime = 1391735952;
-			block.nNonce = 386426579;
-		}
+//		if (fTestNet) {
+//			block.nTime = 1391735952;
+//			block.nNonce = 386426579;
+//		}
 
 		//// debug print
 		uint256 hash = block.GetHash();
@@ -3052,6 +3050,7 @@ bool InitBlockIndex() {
 			printf("block.nNonce = %u \n", block.nNonce);
 			printf("block.GetHash = %s\n", block.GetHash().ToString().c_str());
 		}
+			printf("block.GetHash = %s\n", block.GetHash().ToString().c_str());
 
 		block.print();
 		assert(block.GetHash() == hashGenesisBlock);
@@ -4709,11 +4708,11 @@ void static FrycoinMiner(CWallet *pwallet) {
 				// Update nTime every few seconds
 				pblock->UpdateTime(pindexPrev);
 				nBlockTime = ByteReverse(pblock->nTime);
-				if (fTestNet) {
-					// Changing pblock->nTime can change work required on testnet:
-					nBlockBits = ByteReverse(pblock->nBits);
-					hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-				}
+//				if (fTestNet) {
+//					// Changing pblock->nTime can change work required on testnet:
+//					nBlockBits = ByteReverse(pblock->nBits);
+//					hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+//				}
 			}
 		}
 	} catch (boost::thread_interrupted) {
